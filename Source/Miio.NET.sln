@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29926.136
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Miio", "Miio\Miio.csproj", "{8EEA247E-96D2-4954-81A2-994F6762B62B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8EEA247E-96D2-4954-81A2-994F6762B62B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8EEA247E-96D2-4954-81A2-994F6762B62B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8EEA247E-96D2-4954-81A2-994F6762B62B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8EEA247E-96D2-4954-81A2-994F6762B62B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F7B09CBA-05D8-4A87-909A-2D0DBE43550F}
+	EndGlobalSection
+EndGlobal
