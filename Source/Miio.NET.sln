@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Miio", "Miio\Miio.csproj", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Miio.Utilities", "Miio.Utilities\Miio.Utilities.csproj", "{3DD26835-C255-4F56-A372-4BA44793557C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Miio.Devices", "Miio.Devices\Miio.Devices.csproj", "{16904844-F6A9-43D2-983E-1FF93456A92C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{3DD26835-C255-4F56-A372-4BA44793557C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3DD26835-C255-4F56-A372-4BA44793557C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3DD26835-C255-4F56-A372-4BA44793557C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{16904844-F6A9-43D2-983E-1FF93456A92C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{16904844-F6A9-43D2-983E-1FF93456A92C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{16904844-F6A9-43D2-983E-1FF93456A92C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{16904844-F6A9-43D2-983E-1FF93456A92C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
