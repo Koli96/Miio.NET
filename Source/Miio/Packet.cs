@@ -1,11 +1,14 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Linq;
+using Miio.Utilities;
 
 namespace Miio
 {
     public class Packet
     {
         public Packet() { }
+
         public Packet(byte[] bytes)
         {
             _deviceId = BitConverter.ToUInt32(bytes.Skip(8).Take(4).Reverse().ToArray(), 0);
@@ -17,16 +20,17 @@ namespace Miio
 
         private uint _deviceId;
         private uint _stamp;
+        private string _token;
         private ushort _length;
 
         public ushort MagicNumber => 0x2131;
-        public byte[] MagicNumberAsByteArray => BitConverter.GetBytes(MagicNumber).Reverse().ToArray();
+        public byte[] MagicNumberAsByteArray => ByteUtilities.ConvertToBytes(MagicNumber);
         public string MagicNumberAsHex => MagicNumber.ToString("X2");
 
         public bool IsHandshake { get; set; }
 
         public uint EmptyPart => IsHandshake ? 0xFFFFFFFF : 0;
-        public byte[] EmptyPartAsByteArray => BitConverter.GetBytes(EmptyPart).Reverse().ToArray();
+        public byte[] EmptyPartAsByteArray => ByteUtilities.ConvertToBytes(EmptyPart);
         public string EmptyPartAsHex => EmptyPart.ToString("X2");
 
         public uint DeviceId
@@ -44,7 +48,7 @@ namespace Miio
                 }
             }
         }
-        public byte[] DeviceIdAsByteArray => BitConverter.GetBytes(DeviceId).Reverse().ToArray();
+        public byte[] DeviceIdAsByteArray => ByteUtilities.ConvertToBytes(DeviceId);
         public string DeviceIdAsHex => DeviceId.ToString("X8");
 
         public ushort Length
@@ -55,7 +59,7 @@ namespace Miio
                 + StampAsByteArray.Length
                 + TokenAsByteArray.Length
                 + PayloadAsByteArray.Length
-                + 2); //+2 because of Length ;
+                + 2); //+2 because of Length itself;
             set
             {
                 if(IsHandshake)
@@ -68,7 +72,7 @@ namespace Miio
                 }
             }
         }
-        public byte[] LengthAsByteArray => BitConverter.GetBytes(Length).Reverse().ToArray();
+        public byte[] LengthAsByteArray => ByteUtilities.ConvertToBytes(Length);
         public string LengthAsHex => Length.ToString("X4");
 
         public uint Stamp
@@ -86,16 +90,31 @@ namespace Miio
                 }
             }
         }
-        public byte[] StampAsByteArray => BitConverter.GetBytes(Stamp).Reverse().ToArray();
+        public byte[] StampAsByteArray => ByteUtilities.ConvertToBytes(Stamp);
         public string StampAsHex => EmptyPart.ToString("X2");
 
-        public string Token { get; set; }
-        public byte[] TokenAsByteArray
+        public string Token
         {
-            get => ConvertToBytes(Token);
+            get => IsHandshake ? "ffffffffffffffffffffffffffffffff" : _token;
             set
             {
-                Token = string.Join(null, value.Select(x => x.ToString("X2")));
+                if(IsHandshake)
+                {
+                    throw new InvalidOperationException("You can not set length when making handshake");
+                }
+                else
+                {
+                    _token = value;
+                }
+            }
+        }
+
+        public byte[] TokenAsByteArray
+        {
+            get => ByteUtilities.ConvertToBytes(Token);
+            set
+            {
+                Token = ByteUtilities.ConvertToString(value); ;
             }
         }
 
@@ -103,10 +122,10 @@ namespace Miio
 
         public byte[] PayloadAsByteArray
         {
-            get => ConvertToBytes(Payload);
+            get => ByteUtilities.ConvertToBytes(Payload);
             set
             {
-                Payload = string.Join(null, value.Select(x => x.ToString("X2")));
+                Payload = ByteUtilities.ConvertToString(value);
             }
         }
 
@@ -120,19 +139,7 @@ namespace Miio
 
         public override string ToString()
         {
-            return string.Join(null, WholePacket.Select(x => x.ToString("X2")));
-        }
-
-        private byte[] ConvertToBytes(string hex)
-        {
-            if(string.IsNullOrWhiteSpace(hex))
-            {
-                return Array.Empty<byte>();
-            }
-            return Enumerable.Range(0, hex.Length)
-                     .Where(x => x % 2 == 0)
-                     .Select(x => Convert.ToByte(hex.Substring(x, 2), 16))
-                     .ToArray();
+            return ByteUtilities.ConvertToString(WholePacket);
         }
     }
 }

@@ -8,4 +8,8 @@
     <PackageReference Include="Polly" Version="7.2.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Miio.Utilities\Miio.Utilities.csproj" />
+  </ItemGroup>
+
 </Project>

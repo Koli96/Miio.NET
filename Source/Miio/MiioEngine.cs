@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using System.Security.Cryptography;
 using System.IO;
 using Polly;
+using Miio.Utilities;
+using System.ComponentModel.Design;
 
 namespace Miio
 {
@@ -16,6 +18,7 @@ namespace Miio
         private uint stamp;
         private readonly IPAddress _ip;
         private readonly string _deviceToken;
+        private readonly byte[] _deviceTokenAsByteArray;
         private uint _deviceId;
 
         public MiioEngine(string endpointIpAddress, string deviceToken)
@@ -23,6 +26,7 @@ namespace Miio
             _ip = IPAddress.Parse(endpointIpAddress);
             _miioUdpClient = new UdpClient();
             _deviceToken = deviceToken;
+            _deviceTokenAsByteArray = ByteUtilities.ConvertToBytes(_deviceToken);
         }
 
         public Packet ReceiveMessage(int timeout = 3)
@@ -36,7 +40,7 @@ namespace Miio
                 ).Execute(ReceiveMessage);
         }
 
-        public string DecodeMessage(Packet packet)
+        public Task<string> DecodeMessage(Packet packet)
         {
             return this.Decrypt(packet.PayloadAsByteArray);
         }
@@ -45,16 +49,16 @@ namespace Miio
         {
             Packet packet = new Packet()
             {
-                IsHandshake = true,
-                Token = "ffffffffffffffffffffffffffffffff"
+                IsHandshake = true
             };
 
-            return await SendMessage(packet.WholePacket);
+            return await SendMessage(packet);
         }
 
         public async Task<int> SendPayload(string payload)
         {
-            var encryptedPayload = this.Encrypt(payload);
+            var encryptedPayload = await this.Encrypt(payload);
+
             Packet packet = new Packet()
             {
                 IsHandshake = false,
@@ -67,26 +71,23 @@ namespace Miio
             var md5 = CalcuateMD5(packet.WholePacket);
             packet.TokenAsByteArray = md5;
 
-            return await SendMessage(packet.WholePacket);
+            return await SendMessage(packet);
         }
-        private byte[] Encrypt(string payload)
-        {
-            var tokenAsByteArray = ConvertToBytes(_deviceToken);
-            var key = CalcuateMD5(tokenAsByteArray);
-            var ivInside = key.Concat(tokenAsByteArray).ToArray();
-            var iv = CalcuateMD5(ivInside);
 
+        private async Task<byte[]> Encrypt(string payload)
+        {
             byte[] encrypted;
 
             using(Aes aes = Aes.Create())
             {
+                var (key, iv) = this.GetCrryptoVectors();
+
                 aes.Mode = CipherMode.CBC;
                 aes.KeySize = 128;
                 aes.BlockSize = 128;
                 aes.Padding = PaddingMode.PKCS7;
                 aes.Key = key;
                 aes.IV = iv;
-
 
                 ICryptoTransform encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
 
@@ -96,7 +97,7 @@ namespace Miio
                     {
                         using(StreamWriter swEncrypt = new StreamWriter(csEncrypt))
                         {
-                            swEncrypt.Write(payload);
+                            await swEncrypt.WriteAsync(payload);
                         }
 
                         encrypted = msEncrypt.ToArray();
@@ -107,17 +108,14 @@ namespace Miio
             return encrypted;
         }
 
-        private string Decrypt(byte[] encrypted)
+        private async Task<string> Decrypt(byte[] encrypted)
         {
-            var tokenAsByteArray = ConvertToBytes(_deviceToken);
-            var key = CalcuateMD5(tokenAsByteArray);
-            var ivInside = key.Concat(tokenAsByteArray).ToArray();
-            var iv = CalcuateMD5(ivInside);
-
             string plaintext = null;
 
             using(Aes aes = Aes.Create())
             {
+                var (key, iv) = this.GetCrryptoVectors();
+
                 aes.Mode = CipherMode.CBC;
                 aes.KeySize = 128;
                 aes.BlockSize = 128;
@@ -133,7 +131,7 @@ namespace Miio
                     {
                         using(StreamReader srDecrypt = new StreamReader(csDecrypt))
                         {
-                            plaintext = srDecrypt.ReadToEnd();
+                            plaintext = await srDecrypt.ReadToEndAsync();
                         }
                     }
                 }
@@ -142,20 +140,25 @@ namespace Miio
             return plaintext;
         }
 
+        private (byte[] key, byte[] iv) GetCrryptoVectors()
+        {
+            var key = CalcuateMD5(_deviceTokenAsByteArray);
+            var ivInside = key.Concat(_deviceTokenAsByteArray).ToArray();
+            var iv = CalcuateMD5(ivInside);
+
+            return (key, iv);
+        }
+
         private Packet ReceiveMessage()
         {
-            IPEndPoint remoteIpep = new IPEndPoint(IPAddress.Any, 0);
+            var endpoint = new IPEndPoint(IPAddress.Any, 0);
             try
             {
-                if(_miioUdpClient.Client == null)
+                if(_miioUdpClient.Client == null || _miioUdpClient.Available <= 0)
                 {
                     return null;
-                }
-                if(_miioUdpClient.Available <= 0)
-                {
-                    return null;
-                }
-                byte[] receivedStream = _miioUdpClient.Receive(ref remoteIpep);
+                }                
+                byte[] receivedStream = _miioUdpClient.Receive(ref endpoint);
                 var received = new Packet(receivedStream);
                 stamp = received.Stamp + 1;
                 _deviceId = received.DeviceId;
@@ -176,23 +179,11 @@ namespace Miio
                 return md5.ComputeHash(toCalculate);
             }
         }
-        private Task<int> SendMessage(byte[] message)
+
+        private Task<int> SendMessage(Packet packet)
         {
             var endpoint = new IPEndPoint(_ip, _endpointPort);
-            return _miioUdpClient.SendAsync(message, message.Length, endpoint);
-        }
-
-        private byte[] ConvertToBytes(string hex)
-        {
-            return Enumerable.Range(0, hex.Length)
-                     .Where(x => x % 2 == 0)
-                     .Select(x => Convert.ToByte(hex.Substring(x, 2), 16))
-                     .ToArray();
-        }
-
-        private string BytesToString(byte[] bytes)
-        {
-            return string.Join(null, bytes.Select(x => x.ToString("X2")));
+            return _miioUdpClient.SendAsync(packet.WholePacket, packet.WholePacket.Length, endpoint);
         }
     }
 }
