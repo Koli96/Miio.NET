@@ -7,26 +7,32 @@ using System.Security.Cryptography;
 using System.IO;
 using Polly;
 using Miio.Utilities;
-using System.ComponentModel.Design;
+using NLog;
 
 namespace Miio
 {
     public class MiioEngine
     {
+        private IMiioLogger _logger;
         private const int _endpointPort = 54321;
         private readonly UdpClient _miioUdpClient;
-        private uint stamp;
+        private uint _stamp;
         private readonly IPAddress _ip;
-        private readonly string _deviceToken;
         private readonly byte[] _deviceTokenAsByteArray;
         private uint _deviceId;
+
+        public string Ip => _ip.ToString();
+        public string DeviceToken { get; }
 
         public MiioEngine(string endpointIpAddress, string deviceToken)
         {
             _ip = IPAddress.Parse(endpointIpAddress);
             _miioUdpClient = new UdpClient();
-            _deviceToken = deviceToken;
-            _deviceTokenAsByteArray = ByteUtilities.ConvertToBytes(_deviceToken);
+            DeviceToken = deviceToken;
+            _deviceTokenAsByteArray = ByteUtilities.ConvertToBytes(DeviceToken);
+
+
+            _logger = new MiioLogger();
         }
 
         public Packet ReceiveMessage(int timeout = 3)
@@ -51,20 +57,22 @@ namespace Miio
             {
                 IsHandshake = true
             };
+            Log(LogLevel.Info, "Trying to make handshake");
 
             return await SendMessage(packet);
         }
 
         public async Task<int> SendPayload(string payload)
         {
+            Log(LogLevel.Info, "Encrypting payload", payload);
             var encryptedPayload = await this.Encrypt(payload);
 
             Packet packet = new Packet()
             {
                 IsHandshake = false,
-                Stamp = stamp,
+                Stamp = _stamp,
                 DeviceId = _deviceId,
-                Token = _deviceToken,
+                Token = DeviceToken,
                 PayloadAsByteArray = encryptedPayload
             };
 
@@ -80,7 +88,7 @@ namespace Miio
 
             using(Aes aes = Aes.Create())
             {
-                var (key, iv) = this.GetCrryptoVectors();
+                var (key, iv) = this.GetCryptoVectors();
 
                 aes.Mode = CipherMode.CBC;
                 aes.KeySize = 128;
@@ -114,7 +122,7 @@ namespace Miio
 
             using(Aes aes = Aes.Create())
             {
-                var (key, iv) = this.GetCrryptoVectors();
+                var (key, iv) = this.GetCryptoVectors();
 
                 aes.Mode = CipherMode.CBC;
                 aes.KeySize = 128;
@@ -137,10 +145,11 @@ namespace Miio
                 }
             }
 
+            Log(LogLevel.Info, "Decrypted response", plaintext);
             return plaintext;
         }
 
-        private (byte[] key, byte[] iv) GetCrryptoVectors()
+        private (byte[] key, byte[] iv) GetCryptoVectors()
         {
             var key = CalcuateMD5(_deviceTokenAsByteArray);
             var ivInside = key.Concat(_deviceTokenAsByteArray).ToArray();
@@ -154,13 +163,16 @@ namespace Miio
             var endpoint = new IPEndPoint(IPAddress.Any, 0);
             try
             {
+                Log(LogLevel.Info, "Trying to get response packet");
                 if(_miioUdpClient.Client == null || _miioUdpClient.Available <= 0)
                 {
+                    Log(LogLevel.Warn, "There is no data received");
                     return null;
-                }                
+                }
                 byte[] receivedStream = _miioUdpClient.Receive(ref endpoint);
                 var received = new Packet(receivedStream);
-                stamp = received.Stamp + 1;
+                Log(LogLevel.Info, "Got response packet", inPacket: received);
+                _stamp = received.Stamp + 1;
                 _deviceId = received.DeviceId;
                 return received;
 
@@ -183,7 +195,23 @@ namespace Miio
         private Task<int> SendMessage(Packet packet)
         {
             var endpoint = new IPEndPoint(_ip, _endpointPort);
+            Log(LogLevel.Info, "Sending packet", outPacket: packet);
             return _miioUdpClient.SendAsync(packet.WholePacket, packet.WholePacket.Length, endpoint);
+        }
+
+        private void Log(LogLevel logLevel, string message, string command = null, Packet outPacket = null, Packet inPacket = null)
+        {
+            var entry = new LogEntry()
+            {
+                Ip = Ip,
+                DeviceToken = DeviceToken,
+                Command = command,
+                OutPacket = outPacket,
+                InPacket = inPacket,
+                Message = message
+            };
+
+            _logger.Log(logLevel, entry);
         }
     }
 }

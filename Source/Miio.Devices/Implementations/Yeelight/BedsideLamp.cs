@@ -1,6 +1,6 @@
-﻿namespace Miio.Devices.Yeelight
+﻿namespace Miio.Devices.Implementations.Yeelight
 {
-    public class BedsideLamp : SmartDevice, IYeelightDevice
+    public class BedsideLamp : GenericYeelightDevice
     {
         public BedsideLamp(string deviceIp, string deviceToken) : base(deviceIp, deviceToken)
         {

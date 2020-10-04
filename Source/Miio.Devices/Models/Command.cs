@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Miio.Devices.Models
+﻿namespace Miio.Devices.Models
 {
     public class Command
     {
