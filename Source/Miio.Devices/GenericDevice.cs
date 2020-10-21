@@ -5,6 +5,7 @@ using Miio.Devices.Logic;
 using Miio.Devices.Exceptions;
 using Polly;
 using System;
+using Miio.Devices.Commands;
 
 namespace Miio.Devices
 {
@@ -76,14 +77,8 @@ namespace Miio.Devices
 
         public virtual async Task<Response> SwitchState()
         {
-            var getStateCommand = new Command()
-            {
-                Method = BasicMethodsAndParams.GET_PROPERTIES,
-                Params = new object[] { BasicMethodsAndParams.POWER }
-            };
-
-            var stateResponse = await SendRawCommand(getStateCommand);
-            var state = (string)stateResponse.Result[0] == BasicMethodsAndParams.ON;
+            var stateResponse = await this.GetProperties(BasicParametersNames.POWER);
+            var state = (string)stateResponse[0] == BasicParametersNames.ON;
             if(state)
             {
                 return await TurnOff();
@@ -97,34 +92,21 @@ namespace Miio.Devices
 
         public virtual Task<Response> TurnOff()
         {
-            var turnOffCmd = new Command()
-            {
-                Method = BasicMethodsAndParams.SET_POWER,
-                Params = new object[] { BasicMethodsAndParams.OFF }
-            };
+            var turnOffCmd = CommandFactory.SwitchStateCommand(false);
 
             return SendRawCommand(turnOffCmd);
         }
 
         public virtual Task<Response> TurnOn()
         {
-            var turnOnCmd = new Command()
-            {
-                Method = BasicMethodsAndParams.SET_POWER,
-                Params = new object[] { BasicMethodsAndParams.ON }
-            };
+            var turnOnCmd = CommandFactory.SwitchStateCommand(true);
 
             return SendRawCommand(turnOnCmd);
         }
 
         public async virtual Task<object[]> GetProperties(params string[] parameters)
         {
-            var cmd = new Command()
-            {
-                Method = BasicMethodsAndParams.GET_PROPERTIES,
-                Params = parameters
-            };
-
+            var cmd = CommandFactory.GetPropertiesCommand(parameters);
             var response = await SendRawCommand(cmd);
             return response.Result;
         }
