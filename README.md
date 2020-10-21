@@ -1,5 +1,9 @@
 # Miio.NET
 
+## What's `Miio.NET`
+
+It's `.NET Standard` library to control Xiaomi smart devices using `miio` protocol.
+
 First of all - big thanks to [OpenMiHome](https://github.com/OpenMiHome/) for describing [protocol](https://github.com/OpenMiHome/mihome-binary-protocol/blob/master/doc/PROTOCOL.md).
 
 ## Basic `miio` engine usage
@@ -51,6 +55,7 @@ Task<Response> TurnOn();
 Task<Response> TurnOff();
 Task<Response> SwitchState();
 Task<Response> SendRawCommand(Command command);
+Task<object[]> GetProperties(params string[] parameters);
 ```
 ### Example of usage:
 Let's assume that we want to switch state of our device (if it's turned off then turn it on and vice versa)
@@ -72,11 +77,13 @@ await bedsideLamp.SwitchState();
 ### `Command` and `Response` classes
 `ISmartDevice` interface allows you to use `SendRawCommand(Command)` method. It's representation of commands sended to your smart device. For example command to turn on device can look like this:
 ```
-new Command()
-{
-    Method = "set_power",
-    Id = 1234,
-    Params = new object[] { "on" }
-};
+var cmd = new Command(BasicCommands.SET_POWER, new object[] { "on" });
+```
+but you can use `CommandFactory`, e.g.:
+```
+var cmd = CommandFactory.SwitchStateCommand(true);
 ```
 `Response` class is serialized response from your device.
+
+### `IYeelightDevice`
+Yeelight devices have their own interface (`IYeelightDevice`) and generic device class (`GenericYeelightDevice`) which provides many operations for these appliance. There is also another command factory for them: `GenericYeelightCommandFactory`.
