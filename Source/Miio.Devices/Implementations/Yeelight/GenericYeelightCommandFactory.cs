@@ -24,11 +24,11 @@ namespace Miio.Devices.Implementations.Yeelight
         public static Command SwitchState(bool turnOn, uint duration)
         {
             string state = turnOn ? BasicParametersNames.ON : BasicParametersNames.OFF;
-            var args = new List<object>
+            IEnumerable<object> args = new List<object>
             {
                 state
             };
-            args.Concat(duration == 0 ? GenerateSuddenArguments() : GenerateSmoothArguments(duration));
+            args = args.Concat(duration == 0 ? GenerateSuddenArguments() : GenerateSmoothArguments(duration));
             return new Command(YeelightCommands.SET_POWER, args);
         }
 
@@ -53,11 +53,11 @@ namespace Miio.Devices.Implementations.Yeelight
 
         public static Command SetBrightnessCommand(uint value, uint duration)
         {
-            var args = new List<object>
+            IEnumerable<object> args = new List<object>
             {
                 value
             };
-            args.Concat(duration == 0 ? GenerateSuddenArguments() : GenerateSmoothArguments(duration));
+            args = args.Concat(duration == 0 ? GenerateSuddenArguments() : GenerateSmoothArguments(duration));
             return new Command(YeelightCommands.SET_BRIGHTNESS, args);
         }
 
@@ -68,11 +68,11 @@ namespace Miio.Devices.Implementations.Yeelight
 
         public static Command SetColorTemperatureCommand(uint value, uint duration)
         {
-            var args = new List<object>
+            IEnumerable<object> args = new List<object>
             {
                 value
             };
-            args.Concat(duration == 0 ? GenerateSuddenArguments() : GenerateSmoothArguments(duration));
+            args = args.Concat(duration == 0 ? GenerateSuddenArguments() : GenerateSmoothArguments(duration));
             return new Command(YeelightCommands.SET_COLOR_TEMPERATURE, args);
         }
 
@@ -83,11 +83,11 @@ namespace Miio.Devices.Implementations.Yeelight
 
         public static Command SetRgbColorCommand(int value, uint duration)
         {
-            var args = new List<object>
+            IEnumerable<object> args = new List<object>
             {
                 value
             };
-            args.Concat(duration == 0 ? GenerateSuddenArguments() : GenerateSmoothArguments(duration));
+            args = args.Concat(duration == 0 ? GenerateSuddenArguments() : GenerateSmoothArguments(duration));
             return new Command(YeelightCommands.SET_RGB_COLOR, args);
         }
 
@@ -98,11 +98,11 @@ namespace Miio.Devices.Implementations.Yeelight
 
         public static Command SetHsvColorCommand(uint hue, uint sat, uint duration)
         {
-            var args = new List<object>
+            IEnumerable<object> args = new List<object>
             {
                 hue, sat
             };
-            args.Concat(duration == 0 ? GenerateSuddenArguments() : GenerateSmoothArguments(duration));
+            args = args.Concat(duration == 0 ? GenerateSuddenArguments() : GenerateSmoothArguments(duration));
             return new Command(YeelightCommands.SET_HSV_COLOR, args);
         }
 
